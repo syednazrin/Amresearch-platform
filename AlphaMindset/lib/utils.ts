@@ -60,3 +60,59 @@ export function sanitizeFilename(filename: string): string {
     .replace(/_{2,}/g, '_')
     .toLowerCase();
 }
+
+// Normalize date to day (YYYY-MM-DD format) for comparison
+export function normalizeDateToDay(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Format date header with relative dates (Today, Yesterday, or formatted date)
+export function formatDateHeader(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Normalize to day for comparison
+  const dateStr = normalizeDateToDay(d);
+  const todayStr = normalizeDateToDay(today);
+  const yesterdayStr = normalizeDateToDay(yesterday);
+
+  if (dateStr === todayStr) {
+    return 'Today';
+  } else if (dateStr === yesterdayStr) {
+    return 'Yesterday';
+  } else {
+    return formatDate(d);
+  }
+}
+
+// Group documents by normalized date
+export function groupDocumentsByDate<T extends { uploadedAt: string | Date }>(
+  documents: T[]
+): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+
+  documents.forEach((doc) => {
+    const dateKey = normalizeDateToDay(doc.uploadedAt);
+    if (!grouped.has(dateKey)) {
+      grouped.set(dateKey, []);
+    }
+    grouped.get(dateKey)!.push(doc);
+  });
+
+  // Sort documents within each group by uploadedAt (newest first)
+  grouped.forEach((docs, dateKey) => {
+    docs.sort((a, b) => {
+      const dateA = typeof a.uploadedAt === 'string' ? new Date(a.uploadedAt) : a.uploadedAt;
+      const dateB = typeof b.uploadedAt === 'string' ? new Date(b.uploadedAt) : b.uploadedAt;
+      return dateB.getTime() - dateA.getTime();
+    });
+  });
+
+  return grouped;
+}

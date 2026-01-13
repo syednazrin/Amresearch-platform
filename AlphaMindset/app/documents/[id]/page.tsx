@@ -9,7 +9,8 @@ import Button from "@/app/components/ui/Button";
 import Textarea from "@/app/components/ui/Textarea";
 import PublicNav from "@/app/components/PublicNav";
 import { Skeleton } from "@/app/components/ui/Skeleton";
-import { ThumbsUp, ThumbsDown, Eye, Calendar, ArrowLeft } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Eye, Calendar, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
+import { normalizeDateToDay, formatDateHeader } from "@/lib/utils";
 
 interface Document {
   _id: string;
@@ -28,6 +29,8 @@ export default function DocumentViewPage() {
   const router = useRouter();
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sameDayDocuments, setSameDayDocuments] = useState<Document[]>([]);
+  const [loadingSameDay, setLoadingSameDay] = useState(false);
   const [agreedWithThesis, setAgreedWithThesis] = useState<boolean | null>(null);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
@@ -41,6 +44,12 @@ export default function DocumentViewPage() {
     }
   }, [params.id]);
 
+  useEffect(() => {
+    if (document && document.uploadedAt) {
+      fetchSameDayDocuments();
+    }
+  }, [document]);
+
   const fetchDocument = async () => {
     try {
       const response = await fetch(`/api/documents/${params.id}`);
@@ -52,6 +61,40 @@ export default function DocumentViewPage() {
       console.error("Error fetching document:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSameDayDocuments = async () => {
+    if (!document || !document.uploadedAt) return;
+    
+    setLoadingSameDay(true);
+    try {
+      const response = await fetch("/api/documents?published=true");
+      if (response.ok) {
+        const data = await response.json();
+        const allDocs = data.documents || [];
+        const currentDate = normalizeDateToDay(document.uploadedAt);
+        
+        // Filter documents from the same day
+        const sameDay = allDocs.filter((doc: Document) => {
+          const docDate = normalizeDateToDay(doc.uploadedAt);
+          return docDate === currentDate;
+        });
+
+        // Sort by uploadedAt time (newest first)
+        sameDay.sort((a: Document, b: Document) => {
+          const dateA = new Date(a.uploadedAt).getTime();
+          const dateB = new Date(b.uploadedAt).getTime();
+          return dateB - dateA;
+        });
+
+        setSameDayDocuments(sameDay);
+      }
+    } catch (error) {
+      console.error("Error fetching same-day documents:", error);
+      setSameDayDocuments([]);
+    } finally {
+      setLoadingSameDay(false);
     }
   };
 
@@ -104,6 +147,31 @@ export default function DocumentViewPage() {
     });
   };
 
+  const getCurrentDocumentIndex = () => {
+    if (!document) return -1;
+    return sameDayDocuments.findIndex(doc => doc._id === document._id);
+  };
+
+  const getNextDocument = () => {
+    const currentIndex = getCurrentDocumentIndex();
+    if (currentIndex >= 0 && currentIndex < sameDayDocuments.length - 1) {
+      return sameDayDocuments[currentIndex + 1];
+    }
+    return null;
+  };
+
+  const getPreviousDocument = () => {
+    const currentIndex = getCurrentDocumentIndex();
+    if (currentIndex > 0) {
+      return sameDayDocuments[currentIndex - 1];
+    }
+    return null;
+  };
+
+  const handleNavigateToDocument = (docId: string) => {
+    router.push(`/documents/${docId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -147,7 +215,10 @@ export default function DocumentViewPage() {
       <div className="pt-20 px-6 pb-16">
         <div className="max-w-7xl mx-auto">
           <button
-            onClick={() => router.push('/documents')}
+            onClick={() => {
+              // Restore scroll position will be handled by the listing page's useEffect
+              router.push('/documents');
+            }}
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -155,9 +226,80 @@ export default function DocumentViewPage() {
           </button>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Left Column - Feedback Section */}
+            {/* Left Column - Same Day Navigation & Feedback */}
             <div className="lg:col-span-1 order-2 lg:order-1">
-              <div className="sticky top-24">
+              <div className="sticky top-24 space-y-6">
+                {/* Same Day Reports Navigation */}
+                {sameDayDocuments.length > 0 && (
+                  <div className="bg-gray-50 border border-gray-200 p-6">
+                    <div className="mb-4 pb-4 border-b border-gray-200">
+                      <h2 className="text-lg font-light text-black mb-1 tracking-tight">
+                        Reports - {document.uploadedAt ? formatDateHeader(new Date(document.uploadedAt)) : ""}
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {sameDayDocuments.length} {sameDayDocuments.length === 1 ? "report" : "reports"} published
+                      </p>
+                    </div>
+
+                    {/* Next/Previous Navigation */}
+                    {sameDayDocuments.length > 1 && (
+                      <div className="flex gap-2 mb-4">
+                        {getPreviousDocument() && (
+                          <button
+                            onClick={() => handleNavigateToDocument(getPreviousDocument()!._id)}
+                            className="flex-1 px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-gray-300 bg-white text-gray-900 hover:border-black transition-all flex items-center justify-center gap-1"
+                          >
+                            <ChevronUp className="w-3 h-3" />
+                            Previous
+                          </button>
+                        )}
+                        {getNextDocument() && (
+                          <button
+                            onClick={() => handleNavigateToDocument(getNextDocument()!._id)}
+                            className="flex-1 px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-gray-300 bg-white text-gray-900 hover:border-black transition-all flex items-center justify-center gap-1"
+                          >
+                            Next
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Same Day Reports List */}
+                    <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                      {loadingSameDay ? (
+                        <p className="text-xs text-gray-500 text-center py-4">Loading...</p>
+                      ) : (
+                        sameDayDocuments.map((doc) => (
+                          <button
+                            key={doc._id}
+                            onClick={() => handleNavigateToDocument(doc._id)}
+                            className={`w-full text-left px-3 py-2 text-sm transition-colors rounded ${
+                              doc._id === document._id
+                                ? "bg-black text-white"
+                                : "bg-white text-gray-900 hover:bg-gray-100 border border-gray-200"
+                            }`}
+                          >
+                            <p className={`font-light leading-tight ${
+                              doc._id === document._id ? "text-white" : "text-black"
+                            }`}>
+                              {doc.title}
+                            </p>
+                            {doc.description && (
+                              <p className={`text-xs mt-1 line-clamp-1 ${
+                                doc._id === document._id ? "text-gray-300" : "text-gray-500"
+                              }`}>
+                                {doc.description}
+                              </p>
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Feedback Section */}
                 <div className="bg-gray-50 border border-gray-200 p-8">
                   {submitted ? (
                     <div className="text-center py-6">

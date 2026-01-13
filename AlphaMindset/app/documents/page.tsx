@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import PublicNav from "@/app/components/PublicNav";
-import Image from "next/image";
-import { formatDate } from "@/lib/utils";
+import { formatDate, groupDocumentsByDate, formatDateHeader, normalizeDateToDay } from "@/lib/utils";
 import { Eye, FileText, Search, X } from "lucide-react";
 
 interface Document {
@@ -23,9 +22,26 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchDocuments();
+    // Restore scroll position
+    const lastScrollPosition = sessionStorage.getItem('documentsScrollPosition');
+    const lastViewedDate = sessionStorage.getItem('lastViewedDate');
+    
+    if (lastScrollPosition && lastViewedDate) {
+      setTimeout(() => {
+        if (containerRef.current) {
+          const dateElement = containerRef.current.querySelector(`[data-date="${lastViewedDate}"]`);
+          if (dateElement) {
+            dateElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            containerRef.current.scrollTop = parseInt(lastScrollPosition, 10);
+          }
+        }
+      }, 100);
+    }
   }, []);
 
   const fetchDocuments = async () => {
@@ -59,6 +75,24 @@ export default function DocumentsPage() {
       setFilteredDocuments(documents);
     }
   }, [documents, searchTerm]);
+
+  const handleDocumentClick = (doc: Document) => {
+    // Save scroll position and date
+    if (containerRef.current) {
+      sessionStorage.setItem('documentsScrollPosition', containerRef.current.scrollTop.toString());
+      sessionStorage.setItem('lastViewedDate', normalizeDateToDay(doc.uploadedAt));
+      sessionStorage.setItem('lastOpenedDocumentId', doc._id);
+    }
+    router.push(`/documents/${doc._id}`);
+  };
+
+  // Group filtered documents by date
+  const groupedDocuments = groupDocumentsByDate(filteredDocuments);
+  
+  // Sort date keys in descending order (newest first)
+  const sortedDateKeys = Array.from(groupedDocuments.keys()).sort((a, b) => {
+    return new Date(b).getTime() - new Date(a).getTime();
+  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -103,8 +137,8 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* Documents Grid */}
-      <div className="px-6 pb-32">
+      {/* Documents List - Date Grouped */}
+      <div className="px-6 pb-32" ref={containerRef}>
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="text-center py-20">
@@ -126,48 +160,59 @@ export default function DocumentsPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-              {filteredDocuments.map((doc) => (
-                <div
-                  key={doc._id}
-                  onClick={() => router.push(`/documents/${doc._id}`)}
-                  className="group cursor-pointer space-y-6"
-                >
-                  {/* Document Image or Icon */}
-                  <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden border border-gray-200 group-hover:border-black transition-colors duration-300">
-                    {doc.imageUrl ? (
-                      <Image
-                        src={doc.imageUrl}
-                        alt={doc.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <FileText className="w-20 h-20 text-gray-300 group-hover:text-black transition-colors duration-300" />
-                      </div>
-                    )}
-                    {/* View Count Badge */}
-                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-white px-3 py-1 text-xs text-gray-600">
-                      <Eye className="w-4 h-4" />
-                      <span>{doc.viewCount}</span>
+            <div className="space-y-12">
+              {sortedDateKeys.map((dateKey) => {
+                const dateDocs = groupedDocuments.get(dateKey) || [];
+                const dateObj = new Date(dateKey);
+                const dateHeader = formatDateHeader(dateObj);
+                const reportCount = dateDocs.length;
+
+                return (
+                  <div key={dateKey} data-date={dateKey} className="space-y-6">
+                    {/* Date Header */}
+                    <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
+                      <h2 className="text-2xl font-light text-black tracking-tight">
+                        {dateHeader}
+                      </h2>
+                      <span className="text-xs text-gray-400 tracking-wider uppercase">
+                        {reportCount} {reportCount === 1 ? "report" : "reports"}
+                      </span>
+                    </div>
+
+                    {/* Reports List */}
+                    <div className="space-y-6 pl-4">
+                      {dateDocs.map((doc) => (
+                        <div
+                          key={doc._id}
+                          onClick={() => handleDocumentClick(doc)}
+                          className="group cursor-pointer py-4 border-b border-gray-100 hover:border-gray-300 transition-colors duration-200"
+                        >
+                          <div className="space-y-2">
+                            <h3 className="text-xl font-light text-black tracking-tight leading-tight group-hover:opacity-70 transition-opacity duration-300">
+                              {doc.title}
+                            </h3>
+                            {doc.description && (
+                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                {doc.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-400 tracking-wider">
+                              <span className="uppercase">{formatDate(doc.uploadedAt)}</span>
+                              <div className="flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                <span>{doc.viewCount} {doc.viewCount === 1 ? "view" : "views"}</span>
+                              </div>
+                              {doc.category && (
+                                <span className="uppercase">{doc.category}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-light text-black tracking-tight leading-tight group-hover:opacity-70 transition-opacity duration-300">
-                      {doc.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
-                      {doc.description || "No description available"}
-                    </p>
-                    <p className="text-xs text-gray-400 tracking-wider uppercase">
-                      {formatDate(doc.uploadedAt)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
