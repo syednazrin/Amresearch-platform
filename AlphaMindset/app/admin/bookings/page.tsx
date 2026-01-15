@@ -190,16 +190,18 @@ export default function AdminBookingsPage() {
                       <Button
                         size="sm"
                         onClick={() => updateStatus(booking._id, "confirmed")}
+                        className="flex items-center justify-center"
                       >
-                        <Check className="w-4 h-4 mr-1" />
+                        <Check className="w-4 h-4" />
                         Confirm
                       </Button>
                       <Button
                         variant="danger"
                         size="sm"
                         onClick={() => updateStatus(booking._id, "cancelled")}
+                        className="flex items-center justify-center"
                       >
-                        <X className="w-4 h-4 mr-1" />
+                        <X className="w-4 h-4" />
                         Cancel
                       </Button>
                     </>
@@ -209,8 +211,9 @@ export default function AdminBookingsPage() {
                       variant="danger"
                       size="sm"
                       onClick={() => updateStatus(booking._id, "cancelled")}
+                      className="flex items-center justify-center"
                     >
-                      <X className="w-4 h-4 mr-1" />
+                      <X className="w-4 h-4" />
                       Cancel
                     </Button>
                   )}

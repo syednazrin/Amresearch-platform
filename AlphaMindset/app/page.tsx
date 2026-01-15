@@ -32,7 +32,7 @@ const videos = [
   "/Main Videos/1.15186706-hd_1920_1080_30fps.mp4",
   "/Main Videos/2.vecteezy_close-up-portrait-of-computer-engineer-s-hand-is-holding_42201986.mp4",
   "/Main Videos/3.vecteezy_product-shelves-displayed-in-a-supermarket_54824272.mp4",
-  "/Main Videos/4.vecteezy_asian-senior-man-farmer-holding-digital-tablet-working-in_5020403.mov",
+  "/Main Videos/4.vecteezy_asian-senior-man-farmer-holding-digital-tablet-working-in_5020403.mp4",
 ];
 
 export default function HomePage() {
@@ -59,16 +59,44 @@ export default function HomePage() {
     const video = videoRef.current;
     if (!video) return;
 
-    const MAX_DURATION = 4; // 4 seconds maximum
+    const MAX_DURATION = 5; // 5 seconds maximum
 
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
+    // Pause and reset video before changing source
+    video.pause();
+    video.currentTime = 0;
+
+    // Update video source
+    const source = video.querySelector('source');
+    if (source) {
+      source.src = videos[currentVideoIndex];
+      video.load(); // Reload the video with new source
+    }
+
+    // Wait for video to be ready before playing
+    const handleCanPlay = async () => {
+      try {
+        // Check if video is still in the DOM before playing
+        if (video && video.parentElement) {
+          await video.play();
+        }
+      } catch (err: any) {
+        // Ignore AbortError - it means the video was changed before play completed
+        if (err.name !== 'AbortError') {
+          console.error("Error playing video:", err);
+        }
+      }
+    };
+
     const handleTimeUpdate = () => {
+      if (!video || !video.parentElement) return;
+      
       if (video.currentTime >= MAX_DURATION) {
-        // Video has played 4 seconds, move to next (loop back to first when reaching the end)
+        // Video has played 5 seconds, move to next (loop back to first when reaching the end)
         setCurrentVideoIndex((prevIndex) => {
           const nextIndex = (prevIndex + 1) % videos.length;
           return nextIndex;
@@ -77,30 +105,18 @@ export default function HomePage() {
     };
 
     const handleVideoEnd = () => {
-      // Video ended before 4 seconds, move to next (loop back to first when reaching the end)
+      if (!video || !video.parentElement) return;
+      
+      // Video ended before 5 seconds, move to next (loop back to first when reaching the end)
       setCurrentVideoIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % videos.length;
         return nextIndex;
       });
     };
 
-    // Set up timeout as backup (in case timeupdate doesn't fire frequently enough)
+    // Set up timeout as backup to ensure we move to next video after 5 seconds
     timeoutRef.current = setTimeout(() => {
-      if (video.currentTime < MAX_DURATION) {
-        // Video hasn't reached 4 seconds yet, check periodically
-        const checkInterval = setInterval(() => {
-          if (video.currentTime >= MAX_DURATION) {
-            clearInterval(checkInterval);
-            setCurrentVideoIndex((prevIndex) => {
-              const nextIndex = (prevIndex + 1) % videos.length;
-              return nextIndex;
-            });
-          }
-        }, 50);
-        
-        // Clean up interval after 5 seconds (safety)
-        setTimeout(() => clearInterval(checkInterval), 5000);
-      } else {
+      if (video && video.parentElement) {
         setCurrentVideoIndex((prevIndex) => {
           const nextIndex = (prevIndex + 1) % videos.length;
           return nextIndex;
@@ -108,6 +124,7 @@ export default function HomePage() {
       }
     }, MAX_DURATION * 1000);
 
+    video.addEventListener('canplay', handleCanPlay, { once: true });
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleVideoEnd);
 
@@ -115,8 +132,13 @@ export default function HomePage() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleVideoEnd);
+      // Pause video on cleanup to prevent play() errors
+      if (video && video.parentElement) {
+        video.pause();
+      }
     };
   }, [currentVideoIndex]);
 
@@ -172,14 +194,12 @@ export default function HomePage() {
         <section className="relative h-[80vh] sm:h-[85vh] md:h-[90vh] lg:h-[95vh] flex items-center sm:items-end justify-center sm:justify-end overflow-hidden rounded-2xl">
           {/* Background Video */}
           <video
-            key={currentVideoIndex}
             ref={videoRef}
-            autoPlay
             muted
             playsInline
             className="absolute inset-0 w-full h-full object-cover z-0"
           >
-            <source src={videos[currentVideoIndex]} type={videos[currentVideoIndex].endsWith('.mov') ? 'video/quicktime' : 'video/mp4'} />
+            <source src={videos[currentVideoIndex]} type="video/mp4" />
           </video>
           
           {/* Black Gradient Overlay - from bottom to top */}

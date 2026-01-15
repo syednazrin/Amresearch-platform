@@ -11,7 +11,13 @@ export async function GET() {
       .sort({ order: 1 })
       .toArray();
 
-    return NextResponse.json({ analysts: analystsList });
+    // Normalize _id to string for client consumption
+    const normalized = analystsList.map((analyst: any) => ({
+      ...analyst,
+      _id: analyst._id?.toString?.() ?? analyst._id,
+    }));
+
+    return NextResponse.json({ analysts: normalized });
   } catch (error) {
     console.error('Error fetching analysts:', error);
     return NextResponse.json(
@@ -28,11 +34,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, title, bio, photoUrl, availabilitySlots, order } = await request.json();
+    const { name, title, bio, photoUrl, availabilitySlots, order, sectors } = await request.json();
 
-    if (!name || !availabilitySlots) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Name and availability slots are required' },
+        { error: 'Name is required' },
         { status: 400 }
       );
     }
@@ -43,9 +49,10 @@ export async function POST(request: NextRequest) {
       title: title || '',
       bio: bio || '',
       photoUrl: photoUrl || '',
-      availabilitySlots, // Array of slot objects
+      availabilitySlots: availabilitySlots || [],
       isActive: true,
       order: order || 0,
+      sectors: sectors || [],
       createdAt: new Date(),
       updatedAt: new Date(),
     });

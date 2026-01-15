@@ -99,13 +99,13 @@ export default function DocumentsPage() {
       <PublicNav />
 
       {/* Header Section */}
-      <div className="pt-32 pb-20 px-6">
+      <div className="pt-24 pb-8 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-16">
-            <h1 className="text-7xl sm:text-8xl md:text-9xl font-extralight text-black tracking-tighter mb-6">
+          <div className="mb-6">
+            <h1 className="text-7xl sm:text-8xl md:text-9xl font-extralight text-black tracking-tighter mb-3">
               Research Reports
             </h1>
-            <div className="w-32 h-px bg-black mb-8"></div>
+            <div className="w-32 h-px bg-black mb-3"></div>
             <p className="text-sm text-gray-500 tracking-wider">
               {filteredDocuments.length}{" "}
               {filteredDocuments.length === 1 ? "document" : "documents"} available
@@ -113,7 +113,7 @@ export default function DocumentsPage() {
           </div>
 
           {/* Search Bar */}
-          <div className="space-y-8 mb-20">
+          <div className="mb-8">
             <div className="relative max-w-2xl">
               <input
                 type="text"

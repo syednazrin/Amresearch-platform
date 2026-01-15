@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
-import Textarea from "@/app/components/ui/Textarea";
 import Card from "@/app/components/ui/Card";
 import Modal from "@/app/components/ui/Modal";
 import { Skeleton } from "@/app/components/ui/Skeleton";
-import { Plus, Edit2, Trash2, User, Calendar } from "lucide-react";
+import { Plus, Edit2, Trash2, User } from "lucide-react";
 
 interface AvailabilitySlot {
   dayOfWeek: number;
@@ -24,6 +23,7 @@ interface Analyst {
   availabilitySlots: AvailabilitySlot[];
   isActive: boolean;
   order: number;
+  sectors?: string[];
 }
 
 const DAYS_OF_WEEK = [
@@ -49,12 +49,9 @@ export default function AnalystsPage() {
     availabilitySlots: [] as AvailabilitySlot[],
     isActive: true,
     order: 0,
+    sectors: [] as string[],
   });
-  const [newSlot, setNewSlot] = useState({
-    dayOfWeek: 1,
-    startTime: "09:00",
-    endTime: "17:00",
-  });
+  const [newSector, setNewSector] = useState("");
 
   useEffect(() => {
     fetchAnalysts();
@@ -83,6 +80,7 @@ export default function AnalystsPage() {
         availabilitySlots: analyst.availabilitySlots || [],
         isActive: analyst.isActive,
         order: analyst.order,
+        sectors: analyst.sectors || [],
       });
     } else {
       setEditingAnalyst(null);
@@ -94,6 +92,7 @@ export default function AnalystsPage() {
         availabilitySlots: [],
         isActive: true,
         order: analysts.length,
+        sectors: [],
       });
     }
     setShowModal(true);
@@ -110,21 +109,29 @@ export default function AnalystsPage() {
       availabilitySlots: [],
       isActive: true,
       order: 0,
+      sectors: [],
     });
+    setNewSector("");
   };
 
-  const handleAddSlot = () => {
+  const handleAddSector = () => {
+    const value = newSector.trim();
+    if (!value) return;
+    if (formData.sectors.includes(value)) {
+      setNewSector("");
+      return;
+    }
     setFormData({
       ...formData,
-      availabilitySlots: [...formData.availabilitySlots, newSlot],
+      sectors: [...formData.sectors, value],
     });
-    setNewSlot({ dayOfWeek: 1, startTime: "09:00", endTime: "17:00" });
+    setNewSector("");
   };
 
-  const handleRemoveSlot = (index: number) => {
+  const handleRemoveSector = (index: number) => {
     setFormData({
       ...formData,
-      availabilitySlots: formData.availabilitySlots.filter((_, i) => i !== index),
+      sectors: formData.sectors.filter((_, i) => i !== index),
     });
   };
 
@@ -197,8 +204,7 @@ export default function AnalystsPage() {
           <p className="text-gray-600">Manage your team of analysts</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Analyst
+          + add analyst
         </Button>
       </div>
 
@@ -262,28 +268,20 @@ export default function AnalystsPage() {
                   </div>
                 </div>
 
+                {analyst.sectors && analyst.sectors.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-xs font-semibold text-gray-700 tracking-wider uppercase mb-1">
+                      Sectors Covered
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {analyst.sectors.join(", ")}
+                    </p>
+                  </div>
+                )}
+
                 {analyst.bio && (
                   <p className="text-gray-600 text-sm">{analyst.bio}</p>
                 )}
-
-                <div className="border-t border-gray-200 pt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Available Slots:
-                  </p>
-                  {analyst.availabilitySlots && analyst.availabilitySlots.length > 0 ? (
-                    <div className="space-y-1">
-                      {analyst.availabilitySlots.map((slot, idx) => (
-                        <div key={idx} className="text-xs text-gray-600">
-                          {DAYS_OF_WEEK.find((d) => d.value === slot.dayOfWeek)?.label}:{" "}
-                          {slot.startTime} - {slot.endTime}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-500">No slots configured</p>
-                  )}
-                </div>
               </div>
             </Card>
           ))}
@@ -311,14 +309,6 @@ export default function AnalystsPage() {
             placeholder="Senior Investment Analyst"
           />
 
-          <Textarea
-            label="Bio"
-            value={formData.bio}
-            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-            placeholder="Brief bio about the analyst..."
-            rows={3}
-          />
-
           <Input
             label="Photo URL"
             value={formData.photoUrl}
@@ -326,69 +316,46 @@ export default function AnalystsPage() {
             placeholder="https://example.com/photo.jpg"
           />
 
+          {/* Sectors Covered */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Availability Slots
+              Sectors Covered
             </label>
-            
-            {formData.availabilitySlots.length > 0 && (
-              <div className="mb-3 space-y-2">
-                {formData.availabilitySlots.map((slot, index) => (
-                  <div
+
+            {formData.sectors.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {formData.sectors.map((sector, index) => (
+                  <span
                     key={index}
-                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                    className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full"
                   >
-                    <span className="text-sm text-gray-700">
-                      {DAYS_OF_WEEK.find((d) => d.value === slot.dayOfWeek)?.label}:{" "}
-                      {slot.startTime} - {slot.endTime}
-                    </span>
+                    {sector}
                     <button
-                      onClick={() => handleRemoveSlot(index)}
-                      className="text-red-600 hover:text-red-700"
+                      type="button"
+                      onClick={() => handleRemoveSector(index)}
+                      className="text-gray-500 hover:text-gray-700"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      ×
                     </button>
-                  </div>
+                  </span>
                 ))}
               </div>
             )}
 
-            <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-3 gap-2">
-                <select
-                  value={newSlot.dayOfWeek}
-                  onChange={(e) =>
-                    setNewSlot({ ...newSlot, dayOfWeek: parseInt(e.target.value) })
-                  }
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                >
-                  {DAYS_OF_WEEK.map((day) => (
-                    <option key={day.value} value={day.value}>
-                      {day.label}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="time"
-                  value={newSlot.startTime}
-                  onChange={(e) =>
-                    setNewSlot({ ...newSlot, startTime: e.target.value })
-                  }
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                />
-
-                <input
-                  type="time"
-                  value={newSlot.endTime}
-                  onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                />
-              </div>
-
-              <Button onClick={handleAddSlot} variant="secondary" size="sm">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Slot
+            <div className="flex gap-2">
+              <Input
+                label=""
+                value={newSector}
+                onChange={(e) => setNewSector(e.target.value)}
+                placeholder="e.g. Technology, Healthcare"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleAddSector}
+                className="self-start mt-1"
+              >
+                Add
               </Button>
             </div>
           </div>

@@ -161,8 +161,7 @@ export default function AdminSocialMediaPage() {
           onClick={() => handleOpenModal()}
           disabled={embeds.length >= 3}
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Instagram Embed
+          + add instagram embed
         </Button>
       </div>
 
