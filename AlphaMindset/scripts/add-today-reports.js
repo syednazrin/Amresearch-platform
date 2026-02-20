@@ -32,7 +32,7 @@ async function addTodayReports() {
         title: 'Q4 2024 Market Outlook',
         description: 'Comprehensive analysis of market trends and opportunities heading into Q4 2024. Our research indicates strong growth potential in technology and manufacturing sectors.',
         uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0), // 9 AM today
-        viewCount: 0,
+        viewCount: 128,
         isPublished: true,
         isMockToday: true,
         category: 'Market Analysis',
@@ -42,8 +42,8 @@ async function addTodayReports() {
       {
         title: 'Technology Sector Deep Dive',
         description: 'In-depth research on artificial intelligence companies and their market positioning. Analysis of key players and emerging trends.',
-        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 30, 0), // 10:30 AM today
-        viewCount: 0,
+        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0), // 11:00 AM today
+        viewCount: 92,
         isPublished: true,
         isMockToday: true,
         category: 'Technology',
@@ -53,46 +53,13 @@ async function addTodayReports() {
       {
         title: 'Banking Sector Update',
         description: 'Strategic analysis of the banking industry with focus on digital transformation and regulatory changes affecting the sector.',
-        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0), // 12 PM today
-        viewCount: 0,
+        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 30, 0), // 3:30 PM today
+        viewCount: 67,
         isPublished: true,
         isMockToday: true,
         category: 'Finance',
         fileUrl: 'https://example.com/report3.pdf',
         fileName: 'banking-sector-update.pdf',
-      },
-      {
-        title: 'Energy Transition Report',
-        description: 'Examining the global shift towards sustainable energy solutions and investment opportunities in renewable energy.',
-        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 15, 0), // 2:15 PM today
-        viewCount: 0,
-        isPublished: true,
-        isMockToday: true,
-        category: 'Energy',
-        fileUrl: 'https://example.com/report4.pdf',
-        fileName: 'energy-transition-report.pdf',
-      },
-      {
-        title: 'Healthcare Innovation Brief',
-        description: 'Analysis of breakthrough developments in biotechnology and pharmaceutical sectors, with focus on AI-driven drug discovery.',
-        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 45, 0), // 3:45 PM today
-        viewCount: 0,
-        isPublished: true,
-        isMockToday: true,
-        category: 'Healthcare',
-        fileUrl: 'https://example.com/report5.pdf',
-        fileName: 'healthcare-innovation-brief.pdf',
-      },
-      {
-        title: 'Daily Market Wrap',
-        description: 'End-of-day market summary covering key movements, sector performance, and notable corporate announcements.',
-        uploadedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0), // 5 PM today
-        viewCount: 0,
-        isPublished: true,
-        isMockToday: true,
-        category: 'Market Analysis',
-        fileUrl: 'https://example.com/report6.pdf',
-        fileName: 'daily-market-wrap.pdf',
       },
     ];
 

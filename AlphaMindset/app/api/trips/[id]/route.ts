@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
 import { getSession } from '@/lib/auth';
+import { deleteFile, extractKeyFromUrl } from '@/lib/r2';
 import { ObjectId } from 'mongodb';
 
 export async function GET(
@@ -37,20 +38,25 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { companyName, date, location, description, imageUrl } = await request.json();
+    const body = await request.json();
+    const { companyName, date, location, description, imageUrl, isOnline } = body;
 
     const trips = await getCollection('trips');
+    const updates: Record<string, unknown> = {};
+    if (companyName !== undefined) updates.companyName = companyName;
+    if (date !== undefined) updates.date = new Date(date);
+    if (description !== undefined) updates.description = description;
+    if (imageUrl !== undefined) updates.imageUrl = imageUrl;
+    if (isOnline !== undefined) {
+      updates.isOnline = isOnline === true;
+      updates.location = isOnline === true ? 'Online' : (location ?? '');
+    } else if (location !== undefined) {
+      updates.location = location;
+    }
+
     const result = await trips.updateOne(
       { _id: new ObjectId(id) },
-      {
-        $set: {
-          ...(companyName !== undefined && { companyName }),
-          ...(date !== undefined && { date: new Date(date) }),
-          ...(location !== undefined && { location }),
-          ...(description !== undefined && { description }),
-          ...(imageUrl !== undefined && { imageUrl }),
-        },
-      }
+      { $set: updates }
     );
 
     if (result.matchedCount === 0) {
@@ -79,12 +85,26 @@ export async function DELETE(
 
     const { id } = await params;
     const trips = await getCollection('trips');
-    const result = await trips.deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
+    const trip = await trips.findOne({ _id: new ObjectId(id) });
+    if (!trip) {
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
     }
 
+    if (trip.imageUrl) {
+      let key = extractKeyFromUrl(trip.imageUrl);
+      if (key && key.includes('trips/')) {
+        if (key.includes('/') && !key.startsWith('trips/')) {
+          key = key.replace(/^[^/]+\//, '');
+        }
+        try {
+          await deleteFile(key);
+        } catch (err) {
+          console.error('Error deleting trip image from R2:', err);
+        }
+      }
+    }
+
+    await trips.deleteOne({ _id: new ObjectId(id) });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting trip:', error);

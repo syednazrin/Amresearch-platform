@@ -7,18 +7,18 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     const { searchParams } = new URL(request.url);
-    const publishedOnly = searchParams.get('published') === 'true';
+    const analystId = searchParams.get('analystId');
 
     const documents = await getCollection('documents');
-    
-    let query = {};
-    
-    // If not admin, only show published documents
+
+    let query: Record<string, unknown> = {};
     if (!session?.isAdmin) {
       query = { isPublished: true };
     }
-    // If admin and no specific filter, show all documents
-    
+    if (session?.isAdmin && analystId) {
+      query.analystId = new ObjectId(analystId);
+    }
+
     const docs = await documents
       .find(query)
       .sort({ uploadedAt: -1 })

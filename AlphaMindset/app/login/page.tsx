@@ -138,16 +138,6 @@ function LoginForm() {
       <footer className="relative bg-white transition-all duration-1000 ease-out">
         <div className="max-w-7xl mx-auto px-6 py-16">
           {/* Large Brand Logo */}
-          <div className="mb-12">
-            <Image
-              src="/aminvestment-services-berhad-logo (1).png"
-              alt="AMINVEST Logo"
-              width={300}
-              height={80}
-              className="h-16 w-auto"
-            />
-          </div>
-
           {/* Organized Columns */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 pb-12 border-b border-gray-200">
             <div>

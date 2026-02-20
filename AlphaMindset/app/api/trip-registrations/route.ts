@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/mongodb';
+import { getSession } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const tripId = searchParams.get('tripId');
+    if (!tripId) {
+      return NextResponse.json(
+        { error: 'tripId is required' },
+        { status: 400 }
+      );
+    }
+
+    const registrations = await getCollection('trip_registrations');
+    const list = await registrations
+      .find({ tripId: new ObjectId(tripId) })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return NextResponse.json({ registrations: list });
+  } catch (error) {
+    console.error('Error fetching trip registrations:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch registrations' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

@@ -16,7 +16,15 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
+    const companyRaw = formData.get('company') as string | null;
+    const company = companyRaw && companyRaw.trim() ? companyRaw.trim() : null;
+    const industryRaw = formData.get('industry') as string | null;
+    const industry = industryRaw && industryRaw.trim() ? industryRaw.trim() : null;
+    const themeRaw = formData.get('theme') as string | null;
+    const theme = themeRaw && themeRaw.trim() ? themeRaw.trim() : null;
     const isPublished = formData.get('isPublished') === 'true';
+    const analystIdRaw = formData.get('analystId') as string | null;
+    const analystId = analystIdRaw && analystIdRaw.trim() ? new ObjectId(analystIdRaw.trim()) : null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -46,11 +54,15 @@ export async function POST(request: NextRequest) {
     const result = await documents.insertOne({
       title: title || file.name,
       description: description || '',
+      company: company || undefined,
+      industry: industry || undefined,
+      theme: theme || undefined,
       fileUrl: uploadResult.url,
       fileName: file.name,
       fileSize: file.size,
       uploadedAt: new Date(),
       uploadedBy: new ObjectId(session.userId),
+      analystId: analystId || undefined,
       viewCount: 0,
       isPublished,
     });

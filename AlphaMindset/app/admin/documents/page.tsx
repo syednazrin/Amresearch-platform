@@ -11,6 +11,7 @@ import PDFViewer from "@/app/components/PDFViewer";
 import StarRating from "@/app/components/ui/StarRating";
 import { TableSkeleton } from "@/app/components/ui/Skeleton";
 import { formatDate, formatFileSize, formatDateTime } from "@/lib/utils";
+import { INDUSTRIES } from "@/lib/constants";
 import { Trash2, Edit, Eye, Upload as UploadIcon, ThumbsUp, ThumbsDown, Download, X, ExternalLink } from "lucide-react";
 
 interface Document {
@@ -23,6 +24,17 @@ interface Document {
   uploadedAt: string;
   viewCount: number;
   isPublished: boolean;
+  analystId?: string | null;
+  company?: string | null;
+  category?: string | null;
+  industry?: string | null;
+  theme?: string | null;
+}
+
+interface Analyst {
+  _id: string;
+  name: string;
+  title?: string;
 }
 
 interface Feedback {
@@ -50,7 +62,12 @@ export default function AdminDocumentsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPublished, setIsPublished] = useState(true);
-  
+  const [company, setCompany] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [theme, setTheme] = useState("");
+  const [analystId, setAnalystId] = useState<string>("");
+  const [analysts, setAnalysts] = useState<Analyst[]>([]);
+
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -58,12 +75,35 @@ export default function AdminDocumentsPage() {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [feedbackStats, setFeedbackStats] = useState<FeedbackStats | null>(null);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editDocument, setEditDocument] = useState<Document | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editIsPublished, setEditIsPublished] = useState(true);
+  const [editAnalystId, setEditAnalystId] = useState<string>("");
+  const [editCompany, setEditCompany] = useState("");
+  const [editIndustry, setEditIndustry] = useState("");
+  const [editTheme, setEditTheme] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   
   const router = useRouter();
 
   useEffect(() => {
     fetchDocuments();
+    fetchAnalysts();
   }, []);
+
+  const fetchAnalysts = async () => {
+    try {
+      const res = await fetch("/api/analysts");
+      const data = await res.json();
+      setAnalysts(data.analysts || []);
+    } catch (e) {
+      console.error("Error fetching analysts:", e);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -94,6 +134,10 @@ export default function AdminDocumentsPage() {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("isPublished", isPublished.toString());
+      if (company.trim()) formData.append("company", company.trim());
+      if (industry) formData.append("industry", industry);
+      if (theme.trim()) formData.append("theme", theme.trim());
+      if (analystId) formData.append("analystId", analystId);
 
       const response = await fetch("/api/documents/upload", {
         method: "POST",
@@ -110,7 +154,11 @@ export default function AdminDocumentsPage() {
       setSelectedFile(null);
       setTitle("");
       setDescription("");
+      setCompany("");
+      setIndustry("");
+      setTheme("");
       setIsPublished(true);
+      setAnalystId("");
       setShowUploadForm(false);
 
       // Refresh documents list
@@ -173,6 +221,63 @@ export default function AdminDocumentsPage() {
     fetchFeedback(doc._id);
   };
 
+  const handleOpenEditModal = (doc: Document) => {
+    setEditDocument(doc);
+    setEditTitle(doc.title);
+    setEditDescription(doc.description || "");
+    setEditCompany(doc.company || doc.category || "");
+    setEditIndustry(doc.industry || "");
+    setEditTheme(doc.theme || "");
+    setEditIsPublished(doc.isPublished);
+    setEditAnalystId(doc.analystId ? String(doc.analystId) : "");
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditDocument(null);
+    setSavingEdit(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editDocument) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/documents/${editDocument._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDescription,
+          company: editCompany || null,
+          industry: editIndustry || null,
+          theme: editTheme || null,
+          isPublished: editIsPublished,
+          analystId: editAnalystId || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+      await fetchDocuments();
+      if (selectedDocument?._id === editDocument._id) {
+        setSelectedDocument({
+          ...selectedDocument,
+          title: editTitle,
+          description: editDescription,
+          company: editCompany || null,
+          industry: editIndustry || null,
+          theme: editTheme || null,
+          isPublished: editIsPublished,
+          analystId: editAnalystId || null,
+        });
+      }
+      handleCloseEditModal();
+    } catch (error) {
+      console.error("Error saving document:", error);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const fetchFeedback = async (docId: string) => {
     setLoadingFeedback(true);
     try {
@@ -215,7 +320,8 @@ export default function AdminDocumentsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
         <Button onClick={() => setShowUploadForm(!showUploadForm)}>
-          + upload document
+          <span className="text-xl leading-none mr-1">+</span>
+          <span className="text-base">upload document</span>
         </Button>
       </div>
 
@@ -260,6 +366,48 @@ export default function AdminDocumentsPage() {
                   placeholder="Brief description of the document"
                 />
 
+                <Input
+                  label="Company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Company name"
+                />
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Industry</label>
+                  <select
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primary transition-colors"
+                  >
+                    <option value="">Select industry</option>
+                    {INDUSTRIES.map((ind) => (
+                      <option key={ind} value={ind}>{ind}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <Input
+                  label="Theme"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  placeholder="e.g. Earnings, Sector outlook"
+                />
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Analyst</label>
+                  <select
+                    value={analystId}
+                    onChange={(e) => setAnalystId(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primary transition-colors"
+                  >
+                    <option value="">No analyst</option>
+                    {analysts.map((a) => (
+                      <option key={a._id} value={a._id}>{a.name}{a.title ? ` — ${a.title}` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -302,6 +450,10 @@ export default function AdminDocumentsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Title</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Company</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Industry</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Theme</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Analyst</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">File</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Uploaded</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Views</th>
@@ -319,6 +471,18 @@ export default function AdminDocumentsPage() {
                     <td className="px-6 py-4">
                       <p className="font-semibold text-gray-900">{doc.title}</p>
                       <p className="text-sm text-gray-600">{doc.description}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {doc.company || doc.category || '—'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {doc.industry || '—'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {doc.theme || '—'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {doc.analystId ? (analysts.find((a) => a._id === String(doc.analystId))?.name ?? '—') : '—'}
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-900">{doc.fileName}</p>
@@ -354,6 +518,16 @@ export default function AdminDocumentsPage() {
                           title="View Details"
                         >
                           <Eye className="w-4 h-4 text-gray-600" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditModal(doc);
+                          }}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4 text-gray-600" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -447,6 +621,14 @@ export default function AdminDocumentsPage() {
                       <p className="text-gray-600">Views</p>
                       <p className="font-semibold text-gray-900">{selectedDocument.viewCount}</p>
                     </div>
+                    {selectedDocument.analystId && (
+                      <div>
+                        <p className="text-gray-600">Analyst</p>
+                        <p className="font-semibold text-gray-900">
+                          {analysts.find((a) => a._id === String(selectedDocument.analystId))?.name ?? "—"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   {selectedDocument.description && (
                     <div className="mt-4">
@@ -549,6 +731,90 @@ export default function AdminDocumentsPage() {
                 )}
               </div>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Edit Document Modal */}
+      {showEditModal && editDocument && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={handleCloseEditModal}
+          title="Edit document"
+          size="md"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Title"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Report title"
+            />
+            <Textarea
+              label="Description"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Brief description"
+              rows={3}
+            />
+            <Input
+              label="Company"
+              value={editCompany}
+              onChange={(e) => setEditCompany(e.target.value)}
+              placeholder="Company name"
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+              <select
+                value={editIndustry}
+                onChange={(e) => setEditIndustry(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white"
+              >
+                <option value="">— None —</option>
+                {INDUSTRIES.map((ind) => (
+                  <option key={ind} value={ind}>{ind}</option>
+                ))}
+              </select>
+            </div>
+            <Input
+              label="Theme"
+              value={editTheme}
+              onChange={(e) => setEditTheme(e.target.value)}
+              placeholder="e.g. Earnings, Sector outlook"
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Analyst</label>
+              <select
+                value={editAnalystId}
+                onChange={(e) => setEditAnalystId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white"
+              >
+                <option value="">— None —</option>
+                {analysts.map((a) => (
+                  <option key={a._id} value={a._id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit-published"
+                checked={editIsPublished}
+                onChange={(e) => setEditIsPublished(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="edit-published" className="text-sm font-medium text-gray-700">
+                Published
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={handleCloseEditModal} disabled={savingEdit}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} disabled={savingEdit}>
+                {savingEdit ? "Saving…" : "Save"}
+              </Button>
+            </div>
           </div>
         </Modal>
       )}

@@ -13,6 +13,7 @@ export default function PublicNav() {
 
   const navItems = [
     { href: "/", label: "Home" },
+    { href: "/alpha-mindset", label: "Alpha Mindset" },
     { href: "/documents", label: "Reports" },
     { href: "/trips", label: "Trips" },
     { href: "/book", label: "Book Meeting" },
@@ -34,53 +35,27 @@ export default function PublicNav() {
   return (
     <>
       <nav className={`${isHomePage ? 'absolute top-0 left-0 right-0 z-50 bg-transparent p-1' : 'bg-white'}`}>
-        {isHomePage ? (
-          <div className="flex items-center justify-between h-20 px-4 md:px-8">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/aminvestment-services-berhad-logo (1).png"
-                alt="AMINVEST Logo"
-                width={200}
-                height={60}
-                className="h-16 w-auto"
-                priority
-              />
-            </Link>
+        {/* Same layout on all pages: logo left, menu right – matches landing page */}
+        <div className="flex items-center justify-between h-20 px-4 md:px-8">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/aminvestment-services-berhad-logo (1).png"
+              alt="AMINVEST Logo"
+              width={200}
+              height={60}
+              className="h-16 w-auto"
+              priority
+            />
+          </Link>
 
-            {/* Burger Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="p-2 transition-colors cursor-pointer text-white hover:text-white/80"
-              aria-label="Open menu"
-            >
-              <Menu className="w-8 h-8" />
-            </button>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
-            <div className="flex items-center justify-between h-20">
-              <Link href="/" className="flex items-center">
-                <Image
-                  src="/aminvestment-services-berhad-logo (1).png"
-                  alt="AMINVEST Logo"
-                  width={200}
-                  height={60}
-                  className="h-16 w-auto"
-                  priority
-                />
-              </Link>
-
-              {/* Burger Menu Button */}
-              <button
-                onClick={() => setIsMenuOpen(true)}
-                className="p-2 transition-colors cursor-pointer text-gray-900 hover:text-gray-600"
-                aria-label="Open menu"
-              >
-                <Menu className="w-8 h-8" />
-              </button>
-            </div>
-          </div>
-        )}
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className={`p-2 transition-colors cursor-pointer ${isHomePage ? 'text-white hover:text-white/80' : 'text-gray-900 hover:text-gray-600'}`}
+            aria-label="Open menu"
+          >
+            <Menu className="w-8 h-8" />
+          </button>
+        </div>
       </nav>
 
       {/* Full Page Menu Modal */}

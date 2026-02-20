@@ -44,18 +44,23 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { title, description, isPublished } = await request.json();
+    const body = await request.json();
+    const { title, description, company, industry, theme, isPublished, analystId } = body;
 
     const documents = await getCollection('documents');
+    const updates: Record<string, unknown> = {};
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (company !== undefined) updates.company = company && String(company).trim() ? String(company).trim() : null;
+    if (industry !== undefined) updates.industry = industry && String(industry).trim() ? String(industry).trim() : null;
+    if (theme !== undefined) updates.theme = theme && String(theme).trim() ? String(theme).trim() : null;
+    if (isPublished !== undefined) updates.isPublished = isPublished;
+    if (analystId !== undefined) {
+      updates.analystId = analystId && String(analystId).trim() ? new ObjectId(analystId) : null;
+    }
     const result = await documents.updateOne(
       { _id: new ObjectId(id) },
-      {
-        $set: {
-          ...(title !== undefined && { title }),
-          ...(description !== undefined && { description }),
-          ...(isPublished !== undefined && { isPublished }),
-        },
-      }
+      { $set: updates }
     );
 
     if (result.matchedCount === 0) {

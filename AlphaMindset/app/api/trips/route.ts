@@ -41,11 +41,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { companyName, date, location, description, imageUrl } = await request.json();
+    const { companyName, date, location, description, imageUrl, isOnline } = await request.json();
+    const isOnlineTrip = isOnline === true;
+    const resolvedLocation = isOnlineTrip ? 'Online' : (location || '');
 
-    if (!companyName || !date || !location) {
+    if (!companyName || !date) {
       return NextResponse.json(
-        { error: 'Company name, date, and location are required' },
+        { error: 'Company name and date are required' },
+        { status: 400 }
+      );
+    }
+    if (!isOnlineTrip && !resolvedLocation.trim()) {
+      return NextResponse.json(
+        { error: 'Location is required when the trip is not online' },
         { status: 400 }
       );
     }
@@ -54,7 +62,8 @@ export async function POST(request: NextRequest) {
     const result = await trips.insertOne({
       companyName,
       date: new Date(date),
-      location,
+      location: isOnlineTrip ? 'Online' : resolvedLocation.trim(),
+      isOnline: isOnlineTrip,
       description: description || '',
       imageUrl: imageUrl || '',
       createdAt: new Date(),

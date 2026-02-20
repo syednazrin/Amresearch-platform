@@ -8,12 +8,17 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const docId = new ObjectId(id);
     const documents = await getCollection('documents');
-    
-    await documents.updateOne(
-      { _id: new ObjectId(id) },
-      { $inc: { viewCount: 1 } }
-    );
+    const documentViews = await getCollection('document_views');
+
+    await Promise.all([
+      documents.updateOne({ _id: docId }, { $inc: { viewCount: 1 } }),
+      documentViews.insertOne({
+        documentId: docId,
+        viewedAt: new Date(),
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -174,16 +174,6 @@ export default function TermsOfServicePage() {
       {/* Footer */}
       <footer className="relative bg-white transition-all duration-1000 ease-out">
         <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="mb-12">
-            <Image
-              src="/aminvestment-services-berhad-logo (1).png"
-              alt="AMINVEST Logo"
-              width={300}
-              height={80}
-              className="h-16 w-auto"
-            />
-          </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 pb-12 border-b border-gray-200">
             <div>
               <h3 className="text-xs font-semibold text-black mb-4 uppercase tracking-wider">
