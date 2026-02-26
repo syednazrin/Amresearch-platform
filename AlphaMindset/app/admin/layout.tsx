@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { FileText, Plane, Calendar, Settings, LogOut, Menu, X, User, Users, Instagram, BarChart3, Brain } from "lucide-react";
+import { FileText, Plane, Calendar, Settings, LogOut, Menu, X, User, Users, Instagram, BarChart3 } from "lucide-react";
 
 interface Session {
   isSuperAdmin?: boolean;
@@ -44,7 +44,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const menuItems = [
     { href: "/admin", label: "Dashboard", icon: BarChart3 },
     { href: "/admin/documents", label: "Documents", icon: FileText },
-    { href: "/admin/alpha-mindset", label: "Alpha Mindset", icon: Brain },
     { href: "/admin/trips", label: "Trips", icon: Plane },
     { href: "/admin/bookings", label: "Bookings", icon: Calendar },
     { href: "/admin/analysts", label: "Analysts", icon: User },

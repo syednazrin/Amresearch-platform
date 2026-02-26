@@ -233,40 +233,6 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* Alpha Mindset Section – Thought leadership / Head of Institutional Sales */}
-      <div className="relative py-16 bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-xs text-gray-500 tracking-[0.3em] uppercase mb-4">
-                Thought Leadership
-              </p>
-              <h2 className="text-6xl sm:text-7xl md:text-8xl font-extralight text-black tracking-tighter mb-6">
-                Alpha Mindset
-              </h2>
-              <p className="text-sm text-gray-600 leading-relaxed max-w-lg mb-8">
-                Strategic perspectives and proprietary investment thinking from our Head of Institutional Sales — macro views,
-                positioning logic, and the conviction-driven philosophy behind our research.
-              </p>
-              <Link href="/alpha-mindset">
-                <button className="px-8 py-4 text-white text-xs tracking-[0.3em] uppercase font-semibold hover:opacity-90 transition-all duration-300 inline-flex items-center gap-3" style={{ backgroundColor: '#FF0009' }}>
-                  Read Alpha Mindset
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </Link>
-            </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
-              <Image
-                src="/JeffreyNgKengLuen.jpg"
-                alt="Jeffrey Ng Keng Luen, Chief Investment Officer"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Company Visits & Booking Section */}
       <div className="relative py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">
@@ -454,9 +420,6 @@ export default function HomePage() {
               <div className="space-y-2 text-sm text-gray-600">
                 <Link href="/" className="block hover:text-black transition-colors duration-300">
                   Home
-                </Link>
-                <Link href="/alpha-mindset" className="block hover:text-black transition-colors duration-300">
-                  Alpha Mindset
                 </Link>
                 <Link href="/documents" className="block hover:text-black transition-colors duration-300">
                   Reports

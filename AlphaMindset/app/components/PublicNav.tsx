@@ -13,7 +13,6 @@ export default function PublicNav() {
 
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/alpha-mindset", label: "Alpha Mindset" },
     { href: "/documents", label: "Reports" },
     { href: "/trips", label: "Trips" },
     { href: "/book", label: "Book Meeting" },
