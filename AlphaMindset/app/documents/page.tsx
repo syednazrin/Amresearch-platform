@@ -37,7 +37,6 @@ export default function DocumentsPage() {
   const [filterIndustry, setFilterIndustry] = useState<string>("");
   const [filterDate, setFilterDate] = useState<string>("");
   const [filterAnalyst, setFilterAnalyst] = useState<string>("");
-  const [filterTheme, setFilterTheme] = useState<string>("");
   const [analysts, setAnalysts] = useState<Analyst[]>([]);
   const [scrollToToday, setScrollToToday] = useState(false);
   const router = useRouter();
@@ -117,22 +116,18 @@ export default function DocumentsPage() {
     }
   };
 
-  // Filter options: dates and themes from documents; industry from constants + documents.
+  // Filter options: dates from documents.
   const filterOptions = useMemo(() => {
     const dates = new Set<string>();
-    const themes = new Set<string>();
     documents.forEach((doc) => {
       dates.add(normalizeDateToDay(doc.uploadedAt));
-      const theme = doc.theme ?? doc.category ?? "";
-      if (theme) themes.add(theme);
     });
     return {
       dates: Array.from(dates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()),
-      themes: Array.from(themes).sort(),
     };
   }, [documents]);
 
-  // Apply search and filters: search bar (company/title/description), industry, date, analyst, theme.
+  // Apply search and filters: search bar (company/title/description), industry, date, analyst.
   useEffect(() => {
     let result = documents;
     const q = searchQuery.trim().toLowerCase();
@@ -153,11 +148,8 @@ export default function DocumentsPage() {
     if (filterAnalyst) {
       result = result.filter((doc) => doc.analystId != null && String(doc.analystId) === filterAnalyst);
     }
-    if (filterTheme) {
-      result = result.filter((doc) => (doc.theme ?? doc.category ?? "") === filterTheme);
-    }
     setFilteredDocuments(result);
-  }, [documents, searchQuery, filterIndustry, filterDate, filterAnalyst, filterTheme]);
+  }, [documents, searchQuery, filterIndustry, filterDate, filterAnalyst]);
 
   const toggleDateExpanded = (dateKey: string) => {
     setExpandedDates((prev) => {
@@ -173,10 +165,9 @@ export default function DocumentsPage() {
     setFilterIndustry("");
     setFilterDate("");
     setFilterAnalyst("");
-    setFilterTheme("");
   };
 
-  const hasActiveFilters = searchQuery.trim() || filterIndustry || filterDate || filterAnalyst || filterTheme;
+  const hasActiveFilters = searchQuery.trim() || filterIndustry || filterDate || filterAnalyst;
 
   const handleDocumentClick = (doc: Document) => {
     // Save scroll position and date
@@ -208,7 +199,7 @@ export default function DocumentsPage() {
             <div className="w-32 h-px bg-black mb-3"></div>
           </div>
 
-          {/* Search and filters: Company search, Industry, Date, Analyst, Theme */}
+          {/* Search and filters: Company search, Industry, Date, Analyst */}
           <div className="mb-8">
             <p className="text-xs text-gray-500 tracking-wider uppercase mb-3">Search & filter</p>
             <div className="flex flex-wrap gap-4 items-center">
@@ -251,16 +242,6 @@ export default function DocumentsPage() {
                 <option value="">Analyst</option>
                 {analysts.map((a) => (
                   <option key={a._id} value={a._id}>{a.name}{a.title ? ` — ${a.title}` : ""}</option>
-                ))}
-              </select>
-              <select
-                value={filterTheme}
-                onChange={(e) => setFilterTheme(e.target.value)}
-                className="px-4 py-3 border border-gray-300 text-black bg-white focus:outline-none focus:border-black transition-colors min-w-[140px]"
-              >
-                <option value="">Theme</option>
-                {filterOptions.themes.map((t) => (
-                  <option key={t} value={t}>{t}</option>
                 ))}
               </select>
               {hasActiveFilters && (
